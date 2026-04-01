@@ -1,0 +1,7 @@
+sed -i 's/version = "0.2.0"/version = "0.2.5"/' pyproject.toml
+
+git add pyproject.toml .github/workflows/
+git commit -m "fix: bump to 0.2.5, fix CI/CD manylinux platform tag"
+git tag v0.2.5
+git push origin main
+git push origin v0.2.5
