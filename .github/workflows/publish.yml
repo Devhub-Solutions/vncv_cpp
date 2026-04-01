@@ -30,13 +30,13 @@ jobs:
     - name: 📦 Build package (tạo folder dist)
       run: python -m build
 
-    - name: 🚀 Publish package to TestPyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
-      continue-on-error: true # Nếu version đã tồn tại trên TestPyPI thì bỏ qua lỗi
-      with:
-        repository-url: https://test.pypi.org/legacy/
-        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-        # Lưu ý: Bạn cần vào mục Settings > Secrets and variables > Actions > Tạo Secret tên TEST_PYPI_API_TOKEN
+    # - name: 🚀 Publish package to TestPyPI
+    #   uses: pypa/gh-action-pypi-publish@release/v1
+    #   continue-on-error: true # Nếu version đã tồn tại trên TestPyPI thì bỏ qua lỗi
+    #   with:
+    #     repository-url: https://test.pypi.org/legacy/
+    #     password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+    #     # Lưu ý: Bạn cần vào mục Settings > Secrets and variables > Actions > Tạo Secret tên TEST_PYPI_API_TOKEN
 
     - name: 🚀 Publish package to PyPI (Official)
       # Chỉ publish lên live PyPI khi bạn tạo tag mới (VD: v1.0.1)
