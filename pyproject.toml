@@ -55,7 +55,8 @@ vncv = "vncv.ocr:main"
 cmake.build-type = "Release"
 # Include the Python package source
 wheel.packages = ["vncv"]
-sdist.exclude = ["csrc/**", "tests/**", "vietocr-onnx-package/**"]
+# Keep test data and aux tooling out of the sdist, but ship C++ sources for builds
+sdist.exclude = ["tests/**", "vietocr-onnx-package/**"]
 
 [tool.scikit-build.cmake.define]
 VNCV_BUILD_PYTHON = "ON"
