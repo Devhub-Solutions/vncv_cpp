@@ -17,8 +17,16 @@ int main(int argc, char** argv) {
             std::cerr << "Image not found: " << image_path << "\n";
             return 2;
         }
+        if (!std::filesystem::is_regular_file(image_path)) {
+            std::cerr << "Image path is not a file: " << image_path << "\n";
+            return 2;
+        }
         if (!std::filesystem::exists(weights_dir)) {
             std::cerr << "Weights directory not found: " << weights_dir << "\n";
+            return 2;
+        }
+        if (!std::filesystem::is_directory(weights_dir)) {
+            std::cerr << "Weights path is not a directory: " << weights_dir << "\n";
             return 2;
         }
 
