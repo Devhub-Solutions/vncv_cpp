@@ -11,6 +11,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 option(VNCV_BUILD_PYTHON "Build Python extension module" ON)
 option(VNCV_USE_SYSTEM_ORT "Use system-installed ONNX Runtime instead of fetching" OFF)
+option(VNCV_BUILD_SDK_TEST "Build C++ SDK smoke test executable" ON)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Dependencies fetched at configure time
@@ -19,13 +20,15 @@ option(VNCV_USE_SYSTEM_ORT "Use system-installed ONNX Runtime instead of fetchin
 include(FetchContent)
 
 # -- pybind11 -----------------------------------------------------------------
-FetchContent_Declare(
-    pybind11
-    GIT_REPOSITORY https://github.com/pybind/pybind11.git
-    GIT_TAG        v2.13.6
-    GIT_SHALLOW    TRUE
-)
-FetchContent_MakeAvailable(pybind11)
+if(VNCV_BUILD_PYTHON)
+    FetchContent_Declare(
+        pybind11
+        GIT_REPOSITORY https://github.com/pybind/pybind11.git
+        GIT_TAG        v2.13.6
+        GIT_SHALLOW    TRUE
+    )
+    FetchContent_MakeAvailable(pybind11)
+endif()
 
 # -- nlohmann/json ------------------------------------------------------------
 FetchContent_Declare(
@@ -190,4 +193,12 @@ if(VNCV_BUILD_PYTHON)
 
     install(TARGETS _vncv_core
             DESTINATION "${SKBUILD_PLATLIB_DIR}/vncv")
+endif()
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Optional C++ SDK smoke test executable
+# ─────────────────────────────────────────────────────────────────────────────
+if(VNCV_BUILD_SDK_TEST)
+    add_executable(vncv_sdk_test csrc/test_sdk.cpp)
+    target_link_libraries(vncv_sdk_test PRIVATE vncv_core_lib)
 endif()
