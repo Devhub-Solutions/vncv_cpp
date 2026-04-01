@@ -1,0 +1,26 @@
+# ── Stage 1: build wheels inside manylinux container ────────────────────────
+FROM quay.io/pypa/manylinux_2_28_x86_64 AS builder
+
+# Install OpenCV dev headers (available in manylinux_2_28 via yum)
+RUN yum install -y opencv opencv-devel && yum clean all
+
+# Copy source
+COPY . /src
+WORKDIR /src
+
+# Build wheel for each Python version, then auditwheel-repair
+RUN for PYBIN in \
+        /opt/python/cp310-cp310/bin \
+        /opt/python/cp311-cp311/bin \
+        /opt/python/cp312-cp312/bin; do \
+    ${PYBIN}/pip wheel . --no-deps -w /tmp/raw/; \
+    done && \
+    for whl in /tmp/raw/*.whl; do \
+        auditwheel repair "$whl" \
+            --plat manylinux_2_28_x86_64 \
+            -w /dist/; \
+    done
+
+# ── Stage 2: scratch image chỉ chứa .whl files ──────────────────────────────
+FROM scratch
+COPY --from=builder /dist /

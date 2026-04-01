@@ -1,109 +1,164 @@
 name: Build and Publish Wheels
 
 on:
-  release:
-    types: [published]
   push:
-    tags:
-      - 'v*.*.*'
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────
-  # Build native wheels on each platform
+  # Linux: chạy trực tiếp trong manylinux Docker container
   # ─────────────────────────────────────────────────────────────────────────
-  build-wheels:
-    name: Build wheels on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+  build-linux:
+    name: Linux ${{ matrix.arch }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-13, macos-14, windows-2022]
+        arch: [x86_64, aarch64]
 
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Install cmake (Windows host)
-        if: runner.os == 'Windows'
-        uses: lukka/get-cmake@latest
-
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.21
-        env:
-          CIBW_BUILD: "cp310-* cp311-* cp312-*"
-          CIBW_SKIP: "*-musllinux*"
-
-          CIBW_ARCHS_LINUX:   "x86_64 aarch64"
-          CIBW_ARCHS_MACOS:   "x86_64 arm64"
-          CIBW_ARCHS_WINDOWS: "AMD64"
-
-          CIBW_MANYLINUX_X86_64_IMAGE:  "manylinux_2_28"
-          CIBW_MANYLINUX_AARCH64_IMAGE: "manylinux_2_28"
-
-          CIBW_ENVIRONMENT_LINUX:   "VNCV_BUILD_PYTHON=ON"
-          CIBW_ENVIRONMENT_MACOS:   "VNCV_BUILD_PYTHON=ON"
-          CIBW_ENVIRONMENT_WINDOWS: >
-            VNCV_BUILD_PYTHON=ON
-            OpenCV_DIR="C:\\tools\\opencv\\build\\x64\\vc16\\lib"
-
-          CIBW_BEFORE_BUILD_LINUX: |
-            yum install -y opencv opencv-devel || \
-            (apt-get update && apt-get install -y libopencv-dev)
-
-          CIBW_BEFORE_BUILD_MACOS: |
-            brew install opencv || true
-
-          CIBW_BEFORE_BUILD_WINDOWS: |
-            choco install opencv -y --version 4.9.0
-
-          CIBW_BUILD_FRONTEND: "build"
-
-          CIBW_REPAIR_WHEEL_COMMAND_LINUX:   "auditwheel repair --plat manylinux_2_28_{arch} -w {dest_dir} {wheel}"
-          CIBW_REPAIR_WHEEL_COMMAND_MACOS:   "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}"
-          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: ""
-
-          CIBW_TEST_COMMAND: "python -c \"import vncv; print('vncv backend:', vncv._BACKEND)\""
-
-        with:
-          output-dir: wheelhouse
-
-      - name: Upload wheel artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: wheels-${{ matrix.os }}
-          path: wheelhouse/*.whl
-
-  # ─────────────────────────────────────────────────────────────────────────
-  # Build pure-Python sdist (fallback on unsupported platforms)
-  # ─────────────────────────────────────────────────────────────────────────
-  build-sdist:
-    name: Build source distribution
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Build sdist
-        run: pipx run build --sdist
+      # Cần để build aarch64 trên runner x86_64
+      - name: Set up QEMU
+        if: matrix.arch == 'aarch64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
 
-      - name: Upload sdist
-        uses: actions/upload-artifact@v4
+      - name: Build wheels in manylinux container
+        run: |
+          mkdir -p dist
+          docker run --rm \
+            --platform linux/${{ matrix.arch == 'x86_64' && 'amd64' || 'arm64' }} \
+            -v "${{ github.workspace }}:/src" \
+            -v "${{ github.workspace }}/dist:/dist" \
+            quay.io/pypa/manylinux_2_28_${{ matrix.arch }} \
+            bash -c "
+              set -ex
+              yum install -y opencv opencv-devel
+
+              cd /src
+              for PYBIN in \
+                /opt/python/cp310-cp310/bin \
+                /opt/python/cp311-cp311/bin \
+                /opt/python/cp312-cp312/bin; do
+                  \${PYBIN}/pip wheel . --no-deps -w /tmp/raw/
+              done
+
+              for whl in /tmp/raw/*.whl; do
+                auditwheel repair \"\$whl\" \
+                  --plat manylinux_2_28_${{ matrix.arch }} \
+                  -w /dist/
+              done
+            "
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-linux-${{ matrix.arch }}
+          path: dist/*.whl
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # macOS: vẫn cần native runner (Docker không hỗ trợ macOS)
+  # ─────────────────────────────────────────────────────────────────────────
+  build-macos:
+    name: macOS ${{ matrix.os }} ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-13
+            arch: x86_64
+          - os: macos-14
+            arch: arm64
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install OpenCV
+        run: brew install opencv
+
+      - uses: pypa/cibuildwheel@v2.21
+        env:
+          CIBW_BUILD: "cp310-* cp311-* cp312-*"
+          CIBW_ARCHS_MACOS: ${{ matrix.arch }}
+          CIBW_ENVIRONMENT_MACOS: "VNCV_BUILD_PYTHON=ON"
+          CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
+            delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}
+          CIBW_TEST_COMMAND: "python -c \"import vncv; print('ok')\""
+        with:
+          output-dir: dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.os }}-${{ matrix.arch }}
+          path: dist/*.whl
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Windows: vẫn cần native runner
+  # ─────────────────────────────────────────────────────────────────────────
+  build-windows:
+    name: Windows x86_64
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: lukka/get-cmake@latest
+
+      - name: Install OpenCV
+        run: choco install opencv -y --version 4.9.0
+
+      - uses: pypa/cibuildwheel@v2.21
+        env:
+          CIBW_BUILD: "cp310-* cp311-* cp312-*"
+          CIBW_ARCHS_WINDOWS: "AMD64"
+          CIBW_ENVIRONMENT_WINDOWS: >
+            VNCV_BUILD_PYTHON=ON
+            OpenCV_DIR="C:\\tools\\opencv\\build\\x64\\vc16\\lib"
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: ""
+          CIBW_TEST_COMMAND: "python -c \"import vncv; print('ok')\""
+        with:
+          output-dir: dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-windows-amd64
+          path: dist/*.whl
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # sdist
+  # ─────────────────────────────────────────────────────────────────────────
+  build-sdist:
+    name: Build sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: pipx run build --sdist
+      - uses: actions/upload-artifact@v4
         with:
           name: sdist
           path: dist/*.tar.gz
 
   # ─────────────────────────────────────────────────────────────────────────
-  # Publish to PyPI (only on version tags / published releases)
+  # Publish
   # ─────────────────────────────────────────────────────────────────────────
   publish:
     name: Publish to PyPI
-    needs: [build-wheels, build-sdist]
+    needs: [build-linux, build-macos, build-windows, build-sdist]
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'release'
+    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       id-token: write
       contents: read
@@ -112,15 +167,13 @@ jobs:
       url: https://pypi.org/project/vncv/
 
     steps:
-      - name: Download all wheel artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           pattern: wheels-*
           path: dist
           merge-multiple: true
 
-      - name: Download sdist artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: sdist
           path: dist
