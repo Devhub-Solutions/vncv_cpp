@@ -4,10 +4,23 @@
 #include <cmath>
 #include <numeric>
 #include <stdexcept>
+#include <string>
 
 #include <opencv2/imgproc.hpp>
 
 namespace vncv {
+
+namespace {
+Ort::Session make_session(Ort::Env& env, const std::string& onnx_path) {
+    Ort::SessionOptions opts;
+#ifdef _WIN32
+    const std::wstring wpath(onnx_path.begin(), onnx_path.end());
+    return Ort::Session(env, wpath.c_str(), opts);
+#else
+    return Ort::Session(env, onnx_path.c_str(), opts);
+#endif
+}
+} // namespace
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Construction
@@ -17,8 +30,8 @@ RecognitionVi::RecognitionVi(const std::string& encoder_path,
                              const std::string& decoder_path,
                              const std::string& vocab_path)
     : env_(ORT_LOGGING_LEVEL_WARNING, "RecognitionVi"),
-      enc_session_(env_, encoder_path.c_str(), Ort::SessionOptions{}),
-      dec_session_(env_, decoder_path.c_str(), Ort::SessionOptions{}),
+      enc_session_(make_session(env_, encoder_path)),
+      dec_session_(make_session(env_, decoder_path)),
       vocab_(vocab_path)
 {
     Ort::AllocatorWithDefaultOptions alloc;
