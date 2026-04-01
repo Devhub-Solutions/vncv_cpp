@@ -98,8 +98,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-13
-            arch: x86_64
           - os: macos-14
             arch: arm64
 
@@ -115,9 +113,9 @@ jobs:
         env:
           CIBW_BUILD: "cp310-* cp311-* cp312-*"
           CIBW_ARCHS_MACOS: ${{ matrix.arch }}
-          CIBW_ENVIRONMENT_MACOS: "VNCV_BUILD_PYTHON=ON"
+          CIBW_ENVIRONMENT_MACOS: "VNCV_BUILD_PYTHON=ON MACOSX_DEPLOYMENT_TARGET=14.0"
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
-            delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}
+            delocate-wheel --require-archs {delocate_archs} --require-target-macos-version 14.0 -w {dest_dir} {wheel}
           CIBW_TEST_COMMAND: "python -c \"import vncv; print('ok')\""
         with:
           output-dir: dist
