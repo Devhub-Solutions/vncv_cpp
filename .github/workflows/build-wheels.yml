@@ -1,10 +1,11 @@
 name: Build and Publish Wheels
 
 on:
+  pull_request:
   push:
     branches:
       - main
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
   # ─────────────────────────────────────────────────────────────────────────
@@ -51,7 +52,7 @@ jobs:
               done
 
               for whl in /tmp/raw/*.whl; do
-                auditwheel repair \"\$whl\" \
+                auditwheel repair \"$whl\" \
                   --plat manylinux_2_28_${{ matrix.arch }} \
                   -w /dist/
               done
