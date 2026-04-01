@@ -4,10 +4,23 @@
 #include <cmath>
 #include <numeric>
 #include <stdexcept>
+#include <string>
 
 #include <opencv2/imgproc.hpp>
 
 namespace vncv {
+
+namespace {
+Ort::Session make_session(Ort::Env& env, const std::string& onnx_path) {
+    Ort::SessionOptions opts;
+#ifdef _WIN32
+    const std::wstring wpath(onnx_path.begin(), onnx_path.end());
+    return Ort::Session(env, wpath.c_str(), opts);
+#else
+    return Ort::Session(env, onnx_path.c_str(), opts);
+#endif
+}
+} // namespace
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Construction
@@ -15,7 +28,7 @@ namespace vncv {
 
 RecognitionEn::RecognitionEn(const std::string& onnx_path)
     : env_(ORT_LOGGING_LEVEL_WARNING, "RecognitionEn"),
-      session_(env_, onnx_path.c_str(), Ort::SessionOptions{})
+      session_(make_session(env_, onnx_path))
 {
     Ort::AllocatorWithDefaultOptions alloc;
     auto name_ptr = session_.GetInputNameAllocated(0, alloc);
