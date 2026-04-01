@@ -3,7 +3,7 @@ requires = ["scikit-build-core>=0.9", "pybind11>=2.13"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "vncv"
+name = "vncv_cpp"
 version = "0.2.0"
 description = "Vietnamese OCR engine optimized for CPU deployments – C++ ONNX Runtime backend"
 readme = "README.md"
@@ -55,6 +55,7 @@ vncv = "vncv.ocr:main"
 cmake.build-type = "Release"
 # Include the Python package source
 wheel.packages = ["vncv"]
+sdist.exclude = ["csrc/**", "tests/**", "vietocr-onnx-package/**"]
 
 [tool.scikit-build.cmake.define]
 VNCV_BUILD_PYTHON = "ON"

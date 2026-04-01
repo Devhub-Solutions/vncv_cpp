@@ -30,16 +30,10 @@
 Cài đặt package thông qua pip:
 
 ```bash
-pip install vncv
+pip install vncv_cpp
 ```
 
-Hoặc nếu bạn muốn sử dụng GPU (tăng tốc tối đa):
-
-```bash
-pip install vncv[gpu]
-```
-
-**🚀 Điểm mới:** `vncv` hiện đã chuyển hoàn toàn sang **ONNX Runtime Engine**. Bạn không còn cần cài đặt `PyTorch` (nặng ~2GB) nữa. Thư viện giờ đây siêu nhẹ, cài đặt nhanh và chạy mượt mà ngay cả trên CPU yếu.
+**🚀 Điểm mới:** `vncv_cpp` phát hành dưới dạng **binary wheel đa nền tảng** (Linux/macOS/Windows) với backend C++ ONNX Runtime. Bạn không còn cần cài đặt `PyTorch` (nặng ~2GB) nữa.
 
 Trong quá trình build hoặc cài đặt lần đầu, các mô hình OCR cần thiết sẽ được **tự động tải về** và cấu hình sẵn.
 
@@ -73,6 +67,36 @@ Bạn có thể chạy trực tiếp từ terminal mà không cần viết code:
 ```bash
 vncv test_image.jpg --lang vi
 ```
+
+---
+
+## 3.1. Smoke test SDK Python qua C++ backend
+
+Sau khi cài package, bạn có thể kiểm tra nhanh backend C++ (pybind) đã load đúng hay chưa:
+
+```bash
+python -c "from vncv import extract_text; print('✅ SDK import OK')"
+```
+
+Nếu gặp lỗi liên quan tới OpenCV/CMake khi build từ source (ví dụ không tìm thấy `OpenCVConfig.cmake` hoặc thiếu `libGL.so.1`), cần cài thêm thư viện hệ thống:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get update && sudo apt-get install -y libgl1 libopencv-dev
+```
+
+---
+
+## 3.2. CI/CD build binary đa môi trường & publish PyPI
+
+Dự án đã thêm workflow GitHub Actions để:
+
+* Build wheel cho **Linux / macOS / Windows** qua `cibuildwheel` (Linux dùng nhiều kiến trúc với manylinux Docker image).
+* Upload artifact wheel cho từng OS.
+* Publish lên PyPI khi push tag `v*`.
+* Chỉ publish **`.whl` binary** (không upload source distribution).
+
+Tên package trên PyPI: **`vncv_cpp`**.
 
 ---
 
