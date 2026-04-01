@@ -1,0 +1,38 @@
+name: C++ Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-cpp-sdk:
+    name: Build C++ SDK test binary
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libopencv-dev
+
+      - name: Configure CMake (C++ only)
+        run: cmake -S . -B build -G Ninja -DVNCV_BUILD_PYTHON=OFF
+
+      - name: Build SDK smoke target
+        run: cmake --build build --target vncv_sdk_test --parallel
+
+      - name: Verify build artifact exists
+        run: test -x build/vncv_sdk_test
+
+      - name: Upload C++ SDK binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vncv-sdk-test-linux
+          path: build/vncv_sdk_test
+          if-no-files-found: error
