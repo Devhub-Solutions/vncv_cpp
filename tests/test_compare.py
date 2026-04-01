@@ -131,8 +131,8 @@ class TestDetectionClassificationPipeline:
 
     def test_pipeline_no_crash(self, detection_instance, classification_instance):
         frame = self._image()
-        import cv2 as _cv2
-        rgb = _cv2.cvtColor(frame, _cv2.COLOR_BGR2RGB)
+        import cv2
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         boxes = detection_instance(rgb)
         boxes = sort_polygon(list(boxes))
         crops = [crop_image(rgb, b) for b in boxes]
@@ -145,8 +145,8 @@ class TestDetectionClassificationPipeline:
         self, detection_instance, classification_instance
     ):
         frame = self._image()
-        import cv2 as _cv2
-        rgb = _cv2.cvtColor(frame, _cv2.COLOR_BGR2RGB)
+        import cv2
+        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         boxes = detection_instance(rgb)
         crops = [crop_image(rgb, b) for b in boxes]
         if crops:

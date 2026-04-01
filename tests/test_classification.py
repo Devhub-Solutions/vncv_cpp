@@ -89,7 +89,8 @@ class TestClassificationInference:
         images_out, labels = self.cls([crop])
         label, score = labels[0]
         if label == "180" and score > self.cls.threshold:
-            # Image should have been rotated 90° (cv2.rotate code 1 = ROTATE_90_COUNTERCLOCKWISE)
+            # Image should have been rotated 180° (cv2.rotate code 1 = ROTATE_90_CLOCKWISE
+            # is used by the implementation, but the label represents 180° orientation)
             assert images_out[0].shape != (32, 80, 3) or not np.array_equal(
                 images_out[0], original
             ), "Expected rotation but image was unchanged"

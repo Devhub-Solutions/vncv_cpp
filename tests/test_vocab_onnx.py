@@ -53,10 +53,11 @@ class TestVocabONNX:
         assert VocabONNX.MASK == 3
 
     def test_vocab_size(self):
+        # 4 = len([PAD, SOS, EOS, MASK])
         assert len(self.vocab) == 4 + len(CHARS)
 
     def test_char_to_index_offset(self):
-        """User characters start at index 4 (after PAD/SOS/EOS/MASK)."""
+        # User characters start at index 4 (after PAD/SOS/EOS/MASK)
         assert self.vocab.c2i[CHARS[0]] == 4
         assert self.vocab.c2i[CHARS[-1]] == 4 + len(CHARS) - 1
 
