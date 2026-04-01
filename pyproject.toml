@@ -1,11 +1,11 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["scikit-build-core>=0.9", "pybind11>=2.13"]
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "vncv"
-version = "0.1.6"
-description = "Vietnamese OCR engine optimized for CPU deployments"
+version = "0.2.0"
+description = "Vietnamese OCR engine optimized for CPU deployments – C++ ONNX Runtime backend"
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 license = "LicenseRef-DevHubSolutions"
@@ -23,7 +23,14 @@ classifiers = [
   "Intended Audience :: Developers",
   "Topic :: Scientific/Engineering :: Artificial Intelligence"
 ]
+# numpy retained only for the pure-Python fallback path
 dependencies = [
+  "numpy>=1.24"
+]
+
+[project.optional-dependencies]
+# Pure-Python fallback – only needed when the C++ extension is not available
+python-fallback = [
   "onnxruntime",
   "opencv-python",
   "shapely",
@@ -32,15 +39,29 @@ dependencies = [
   "pillow"
 ]
 
-[project.optional-dependencies]
-gpu = ["onnxruntime-gpu"]
-
 [project.urls]
 Homepage = "https://github.com/Devhub-Solutions/VNCV"
 Repository = "https://github.com/Devhub-Solutions/VNCV"
 
 [project.scripts]
 vncv = "vncv.ocr:main"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# scikit-build-core configuration
+# ─────────────────────────────────────────────────────────────────────────────
+
+[tool.scikit-build]
+# The CMakeLists.txt is in the repo root
+cmake.build-type = "Release"
+# Include the Python package source
+wheel.packages = ["vncv"]
+
+[tool.scikit-build.cmake.define]
+VNCV_BUILD_PYTHON = "ON"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# setuptools fallback (for `pip install -e .` without scikit-build-core)
+# ─────────────────────────────────────────────────────────────────────────────
 
 [tool.setuptools]
 packages = ["vncv", "vncv.weights"]
