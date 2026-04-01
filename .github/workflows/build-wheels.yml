@@ -59,7 +59,7 @@ jobs:
             pip install opencv-python
 
           # ── Build tool inside container ────────────────────────────────
-          CIBW_BUILD_FRONTEND: "build[uv]"
+          CIBW_BUILD_FRONTEND: "build"
 
           # ── Repair wheel: bundle shared libs ──────────────────────────
           CIBW_REPAIR_WHEEL_COMMAND_LINUX:   "auditwheel repair -w {dest_dir} {wheel}"
