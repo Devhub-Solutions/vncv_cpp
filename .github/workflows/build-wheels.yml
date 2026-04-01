@@ -150,9 +150,11 @@ jobs:
           CIBW_ARCHS_WINDOWS: "AMD64"
           CIBW_ENVIRONMENT_WINDOWS: >
             VNCV_BUILD_PYTHON=ON
-            OpenCV_DIR="C:\\tools\\opencv\\build\\x64\\vc16\\lib"
-          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: ""
-          CIBW_TEST_COMMAND: "python -c \"import vncv; print('ok')\""
+            OpenCV_DIR="C:\\tools\\opencv\\build"
+            PATH="C:\\tools\\opencv\\build\\x64\\vc16\\bin;$PATH"
+          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
+            delvewheel repair --add-path "C:\\tools\\opencv\\build\\x64\\vc16\\bin" -w {dest_dir} {wheel}
+          CIBW_TEST_COMMAND: "python -c \"import vncv._vncv_core; print('ok')\""
         with:
           output-dir: dist
 

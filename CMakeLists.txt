@@ -182,12 +182,24 @@ if(VNCV_BUILD_PYTHON)
             )
         endif()
 
-        # Install the ORT shared library alongside the Python module
-        install(FILES "${ORT_LIBRARY}"
-                DESTINATION "${SKBUILD_PLATLIB_DIR}/vncv")
-        if(WIN32 AND EXISTS "${ORT_DLL}")
-            install(FILES "${ORT_DLL}"
-                    DESTINATION "${SKBUILD_PLATLIB_DIR}/vncv")
+        # Install ONNX Runtime shared libraries alongside the Python module.
+        # On macOS we need both the symlink and the versioned dylib so
+        # delocate can resolve dependencies inside the wheel.
+        if(APPLE)
+            install(DIRECTORY "${ORT_LIB_DIR}/"
+                    DESTINATION "${SKBUILD_PLATLIB_DIR}/vncv"
+                    FILES_MATCHING
+                    PATTERN "libonnxruntime*.dylib")
+        elseif(WIN32)
+            if(EXISTS "${ORT_DLL}")
+                install(FILES "${ORT_DLL}"
+                        DESTINATION "${SKBUILD_PLATLIB_DIR}/vncv")
+            endif()
+        else()
+            install(DIRECTORY "${ORT_LIB_DIR}/"
+                    DESTINATION "${SKBUILD_PLATLIB_DIR}/vncv"
+                    FILES_MATCHING
+                    PATTERN "libonnxruntime.so*")
         endif()
     endif()
 
