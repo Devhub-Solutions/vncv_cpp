@@ -132,7 +132,43 @@ else()
 endif()
 
 # -- OpenCV -------------------------------------------------------------------
-find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs)
+# Try normal CMake package discovery first.
+find_package(OpenCV QUIET COMPONENTS core imgproc imgcodecs)
+
+# Fallback for environments where OpenCV is installed in non-standard locations
+# (common in CI images, Windows chocolatey packages, custom prefixes, etc.).
+if(NOT OpenCV_FOUND)
+    set(_opencv_hint_dirs
+        "$ENV{OpenCV_DIR}"
+        "$ENV{OPENCV_DIR}"
+        "C:/tools/opencv/build/x64/vc16/lib"
+        "C:/tools/opencv/build"
+        "/usr/lib/x86_64-linux-gnu/cmake/opencv4"
+        "/usr/lib/aarch64-linux-gnu/cmake/opencv4"
+        "/usr/local/lib/cmake/opencv4"
+        "/opt/homebrew/opt/opencv/lib/cmake/opencv4"
+        "/usr/local/opt/opencv/lib/cmake/opencv4"
+    )
+
+    foreach(_opencv_dir IN LISTS _opencv_hint_dirs)
+        if(_opencv_dir)
+            find_package(OpenCV QUIET
+                COMPONENTS core imgproc imgcodecs
+                PATHS "${_opencv_dir}"
+                NO_DEFAULT_PATH
+            )
+            if(OpenCV_FOUND)
+                message(STATUS "Found OpenCV via hint: ${_opencv_dir}")
+                break()
+            endif()
+        endif()
+    endforeach()
+endif()
+
+if(NOT OpenCV_FOUND)
+    message(FATAL_ERROR
+        "OpenCV not found. Set OpenCV_DIR/OPENCV_DIR to a directory containing OpenCVConfig.cmake.")
+endif()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # C++ core static library
@@ -182,12 +218,24 @@ if(VNCV_BUILD_PYTHON)
             )
         endif()
 
-        # Install the ORT shared library alongside the Python module
-        install(FILES "${ORT_LIBRARY}"
-                DESTINATION "${SKBUILD_PLATLIB_DIR}/vncv")
-        if(WIN32 AND EXISTS "${ORT_DLL}")
-            install(FILES "${ORT_DLL}"
-                    DESTINATION "${SKBUILD_PLATLIB_DIR}/vncv")
+        # Install ONNX Runtime shared libraries alongside the Python module.
+        # On macOS we need both the symlink and the versioned dylib so
+        # delocate can resolve dependencies inside the wheel.
+        if(APPLE)
+            install(DIRECTORY "${ORT_LIB_DIR}/"
+                    DESTINATION "${SKBUILD_PLATLIB_DIR}/vncv"
+                    FILES_MATCHING
+                    PATTERN "libonnxruntime*.dylib")
+        elseif(WIN32)
+            if(EXISTS "${ORT_DLL}")
+                install(FILES "${ORT_DLL}"
+                        DESTINATION "${SKBUILD_PLATLIB_DIR}/vncv")
+            endif()
+        else()
+            install(DIRECTORY "${ORT_LIB_DIR}/"
+                    DESTINATION "${SKBUILD_PLATLIB_DIR}/vncv"
+                    FILES_MATCHING
+                    PATTERN "libonnxruntime.so*")
         endif()
     endif()
 
