@@ -144,12 +144,50 @@ jobs:
       - name: Install OpenCV
         run: choco install opencv -y --version 4.9.0
 
+      - name: Resolve OpenCV paths
+        shell: pwsh
+        run: |
+          $candidates = @(
+            "C:\tools\opencv\build\x64\vc16\lib",
+            "C:\tools\opencv\build"
+          )
+          $opencvDir = $null
+          foreach ($candidate in $candidates) {
+            if (Test-Path (Join-Path $candidate "OpenCVConfig.cmake")) {
+              $opencvDir = $candidate
+              break
+            }
+          }
+          if (-not $opencvDir) {
+            $config = Get-ChildItem -Path "C:\tools\opencv" -Filter OpenCVConfig.cmake -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($config) {
+              $opencvDir = $config.DirectoryName
+            }
+          }
+          if (-not $opencvDir) {
+            throw "OpenCVConfig.cmake not found after choco install opencv."
+          }
+
+          $opencvBin = "C:\tools\opencv\build\x64\vc16\bin"
+          if (-not (Test-Path $opencvBin)) {
+            $opencvBin = "C:\tools\opencv\build\bin"
+          }
+          if (-not (Test-Path $opencvBin)) {
+            throw "OpenCV runtime bin directory not found."
+          }
+
+          "OPENCV_DIR=$opencvDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "OPENCV_BIN=$opencvBin" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "Resolved OpenCV_DIR=$opencvDir"
+          Write-Host "Resolved OPENCV_BIN=$opencvBin"
+
       - uses: pypa/cibuildwheel@v2.21
         env:
           CIBW_BUILD: "cp310-* cp311-* cp312-*"
           CIBW_ARCHS_WINDOWS: "AMD64"
           CIBW_ENVIRONMENT_WINDOWS: >
             VNCV_BUILD_PYTHON=ON
+
             OpenCV_DIR="C:\\tools\\opencv\\build"
             PATH="C:\\tools\\opencv\\build\\x64\\vc16\\bin;$PATH"
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >
