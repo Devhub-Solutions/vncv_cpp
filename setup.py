@@ -9,7 +9,14 @@ def download_and_extract_weights():
     weights_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vncv", "weights")
     
     # Check if key models already exist to avoid re-downloading
-    essential_files = ["model_encoder.onnx", "model_decoder.onnx", "vocab.json"]
+    essential_files = [
+        "detection.onnx",
+        "classification.onnx",
+        "recognition.onnx",
+        "model_encoder.onnx",
+        "model_decoder.onnx",
+        "vocab.json",
+    ]
     if all(os.path.exists(os.path.join(weights_dir, f)) for f in essential_files):
         print("[VNCV Setup] Weights already exist, skipping download.")
         return

@@ -45,7 +45,14 @@ def download_weights() -> None:
     weights_dir = WEIGHTS_DIR
     weights_dir.mkdir(parents=True, exist_ok=True)
 
-    essential_files = ["model_encoder.onnx", "model_decoder.onnx", "vocab.json"]
+    essential_files = [
+        "detection.onnx",
+        "classification.onnx",
+        "recognition.onnx",
+        "model_encoder.onnx",
+        "model_decoder.onnx",
+        "vocab.json",
+    ]
     if all((weights_dir / f).exists() for f in essential_files):
         return
 

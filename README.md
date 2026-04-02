@@ -44,7 +44,7 @@ Trong quá trình build hoặc cài đặt lần đầu, các mô hình OCR cầ
 ### Trích xuất văn bản từ ảnh
 
 ```python
-from vncv.ocr import extract_text
+from vncv import extract_text
 
 # Trích xuất văn bản từ ảnh tiếng Việt (mặc định)
 results = extract_text("test_image.jpg", lang="vi")
@@ -54,7 +54,7 @@ print("OCR Results:", results)
 
 👉 Thư viện sẽ tự động:
 * **Tự động tải weights** từ GitHub Releases nếu chưa có (không cần copy thủ công)
-* Load model OCR bằng **ONNX Runtime** (tối ưu hóa tốc độ x2-x5 so với PyTorch trên CPU)
+* Gọi OCR qua **C++ backend (pybind11) + ONNX Runtime** (tối ưu hóa tốc độ x2-x5 so với PyTorch trên CPU)
 * Phát hiện vùng chứa văn bản (text detection)
 * Nhận dạng nội dung (text recognition)
 
@@ -120,7 +120,7 @@ vncv test_image.jpg --json
 Hoặc sử dụng trong khối lệnh Python:
 
 ```python
-from vncv.ocr import extract_text
+from vncv import extract_text
 
 results = extract_text("test_image.jpg", lang="vi", return_dict=True)
 ```
