@@ -30,8 +30,17 @@
 Cài đặt package thông qua pip:
 
 ```bash
+# Tự động chọn binary phù hợp nhất cho hệ điều hành của bạn
 pip install vncv_cpp
 ```
+
+Nếu bạn gặp vấn đề về backend khi chạy trên các môi trường cụ thể, hãy sử dụng lệnh cài đặt tường minh:
+
+| Hệ điều hành | Lệnh cài đặt khuyến nghị |
+| :--- | :--- |
+| **Windows (x64)** | `pip install vncv_cpp --only-binary=:all: --platform win_amd64` |
+| **Linux (x64)** | `pip install vncv_cpp --only-binary=:all: --platform manylinux2014_x86_64` |
+| **macOS (Intel/M1/M2)** | `pip install vncv_cpp` |
 
 **🚀 Điểm mới:** `vncv_cpp` phát hành dưới dạng **binary wheel đa nền tảng** (Linux/macOS/Windows) với backend C++ ONNX Runtime. Bạn không còn cần cài đặt `PyTorch` (nặng ~2GB) nữa.
 

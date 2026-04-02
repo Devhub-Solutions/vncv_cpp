@@ -15,11 +15,18 @@ try:
     from ._cpp_wrapper import extract_text, main  # noqa: F401
     _BACKEND = "cpp"
 except ImportError as exc:  # pragma: no cover - import-time safety
+    runtime = _runtime_platform()
+    suggestion = "pip install vncv_cpp"
+    if "windows" in runtime:
+        suggestion = "pip install vncv_cpp --only-binary=:all: --platform win_amd64"
+    elif "linux" in runtime:
+        suggestion = "pip install vncv_cpp --only-binary=:all: --platform manylinux2014_x86_64"
+    
     raise ImportError(
-        "vncv_cpp requires the compiled C++ backend for your platform. "
-        f"Detected runtime: {_runtime_platform()}. "
-        "Please install the binary wheel built for this OS/architecture from PyPI "
-        "(do not use source-only installation for production runtime)."
+        f"vncv_cpp binary backend not found for {runtime}.\n"
+        f"Please ensure you have installed the correct binary wheel:\n"
+        f"  {suggestion}\n"
+        "Note: Source-only installations are not supported for production runtime."
     ) from exc
 
 __all__ = ["extract_text", "main", "_BACKEND", "_runtime_platform"]
