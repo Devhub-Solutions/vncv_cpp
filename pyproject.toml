@@ -23,20 +23,9 @@ classifiers = [
   "Intended Audience :: Developers",
   "Topic :: Scientific/Engineering :: Artificial Intelligence"
 ]
-# numpy retained only for the pure-Python fallback path
+# lightweight runtime dependency
 dependencies = [
   "numpy>=1.24"
-]
-
-[project.optional-dependencies]
-# Pure-Python fallback – only needed when the C++ extension is not available
-python-fallback = [
-  "onnxruntime",
-  "opencv-python",
-  "shapely",
-  "pyclipper",
-  "numpy==1.26.4",
-  "pillow"
 ]
 
 [project.urls]
@@ -44,7 +33,7 @@ Homepage = "https://github.com/Devhub-Solutions/VNCV"
 Repository = "https://github.com/Devhub-Solutions/VNCV"
 
 [project.scripts]
-vncv = "vncv.ocr:main"
+vncv = "vncv._cpp_wrapper:main"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # scikit-build-core configuration
